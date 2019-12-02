@@ -39,6 +39,7 @@
         }
         Runner.instance_ = this;
 
+        this.playedIntro = false;
         this.outerContainerEl = document.querySelector(outerContainerId);
         this.containerEl = null;
         this.snackbarEl = null;
@@ -495,9 +496,6 @@
         playIntro: function () {
             if (!this.activated && !this.crashed) {
                 this.playingIntro = true;
-                this.players.forEach((player) => {
-                    player.tRex.playingIntro = true;
-                })
 
                 // CSS animation definition.
                 var keyframes = '@-webkit-keyframes intro { ' +
@@ -522,6 +520,8 @@
                 // }
                 this.playing = true;
                 this.activated = true;
+
+                this.playedIntro = true;
             } else if (this.crashed) {
                 this.restart();
             }
@@ -534,9 +534,6 @@
         startGame: function () {
             this.runningTime = 0;
             this.playingIntro = false;
-            this.players.forEach((player) => {
-                player.tRex.playingIntro = false;
-            })
             this.containerEl.style.webkitAnimation = '';
             this.playCount++;
 
@@ -579,14 +576,15 @@
                 this.runningTime += deltaTime;
                 var hasObstacles = this.runningTime > this.config.CLEAR_TIME;
 
-                for (let i = 0; i < this.players.length; ++i) {
-                    const player = this.players[i]
-                    // First jump triggers the intro.
-                    if (player.tRex.jumpCount == 1 && !this.playingIntro) {
-                        this.playIntro();
-                        break;
+                if (!this.playedIntro)
+                    for (let i = 0; i < this.players.length; ++i) {
+                        const player = this.players[i];
+                        // First jump triggers the intro.
+                        if (player.tRex.jumpCount == 1 && !this.playingIntro) {
+                            this.playIntro();
+                            break;
+                        }
                     }
-                }
                 
 
                 // The horizon doesn't move until the intro is over.
@@ -598,8 +596,8 @@
                         this.inverted);
                 }
 
-                const playersState = []
-                this.players.forEach((player) => {
+                const playersState = [];
+                this.players.forEach((player, index) => {
                     // Check for collisions.
                     var collision = hasObstacles &&
                     checkForCollision(this.horizon.obstacles[0], player.tRex);
@@ -609,6 +607,7 @@
                         this.distanceRan += this.currentSpeed * deltaTime / this.msPerFrame;
                     } else {
                         player.crashed = true;
+                        console.log("Player " + index + " Crashed!");
                     }
 
                     playersState.push({
@@ -616,14 +615,14 @@
                         yPos: player.tRex.yPos,
                         crashed: collision !== false,
                         score: this.distanceRan
-                    })
+                    });
                 })
 
-                let allPlayersCrashed = true
+                let allPlayersCrashed = true;
                 for (let player of this.players) {
                     if (!player.crashed) {
-                        allPlayersCrashed = false
-                        break
+                        allPlayersCrashed = false;
+                        break;
                     }
                 }
 
@@ -653,7 +652,7 @@
                         width: 0,
                         height: 0
                     }
-                }
+                };
 
                 var playAchievementSound = this.distanceMeter.update(deltaTime,
                     Math.ceil(this.distanceRan));
@@ -773,13 +772,14 @@
                             errorPageController.trackEasterEgg();
                         }
                     }
+
                     this.players.forEach((player) => {
                         //  Play sound effect and jump on starting the game for the first time.
                         if (!player.tRex.jumping && !player.tRex.ducking) {
                             this.playSound(this.soundFx.BUTTON_PRESS);
                             player.tRex.startJump(this.currentSpeed);
                         }
-                    })
+                    });
                     
                 }
 
@@ -789,7 +789,7 @@
                 }
             }
 
-            this.players.forEach((player) => {
+            this.players.forEach((player, index) => {
                 if (this.playing && !this.crashed && Runner.keycodes.DUCK[e.keyCode]) {
                     e.preventDefault();
                     if (player.tRex.jumping) {
@@ -800,7 +800,7 @@
                         player.tRex.setDuck(true);
                     }
                 }
-            })
+            });
             
         },
 
