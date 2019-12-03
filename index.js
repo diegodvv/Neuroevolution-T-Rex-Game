@@ -53,7 +53,7 @@
         this.canvasCtx = null;
 
         //this.tRex = null;
-        this.players = []
+        this.players = [];
 
         this.distanceMeter = null;
         this.distanceRan = 0;
@@ -598,6 +598,9 @@
 
                 const playersState = [];
                 this.players.forEach((player, index) => {
+                    if (player.crashed)
+                        return;
+                        
                     // Check for collisions.
                     var collision = hasObstacles &&
                     checkForCollision(this.horizon.obstacles[0], player.tRex);
@@ -613,10 +616,10 @@
                     playersState.push({
                         xPos: player.tRex.xPos,
                         yPos: player.tRex.yPos,
-                        crashed: collision !== false,
+                        crashed: player.crashed,
                         score: this.distanceRan
                     });
-                })
+                });
 
                 let allPlayersCrashed = true;
                 for (let player of this.players) {
@@ -685,8 +688,8 @@
             }
 
             this.players.forEach((player) => {
-                if (this.playing || (!this.activated &&
-                    player.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
+                if (!player.crashed && (this.playing || (!this.activated &&
+                    player.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT))) {
                     player.tRex.update(deltaTime);
                     this.scheduleNextUpdate();
                 }
@@ -761,8 +764,14 @@
                 e.preventDefault();
             }
 
+            const acceptedKeyCodes = {
+                JUMP: { '38': 1, '32': 1 , '87': 1 },  // Up, spacebar, W
+                DUCK: { '40': 1, '83': 1 },  // Down, S
+                RESTART: { '13': 1 }  // Enter
+            };;
+
             if (e.target != this.detailsButton) {
-                if (!this.crashed && (Runner.keycodes.JUMP[e.keyCode] ||
+                if (!this.crashed && (acceptedKeyCodes.JUMP[e.keyCode]/*Runner.keycodes.JUMP[e.keyCode]*/ ||
                     e.type == Runner.events.TOUCHSTART)) {
                     if (!this.playing) {
                         this.loadSounds();
@@ -773,13 +782,29 @@
                         }
                     }
 
-                    this.players.forEach((player) => {
+                    if (e.keyCode == 87) {
+                        const player = this.players[1];
+                        if (!player.tRex.jumping && !player.tRex.ducking) {
+                            this.playSound(this.soundFx.BUTTON_PRESS);
+                            player.tRex.startJump(this.currentSpeed);
+                        }
+                    }
+                    else
+                    if (e.keyCode == 38 || e.keyCode == 32) {
+                        const player = this.players[0];
+                        if (!player.tRex.jumping && !player.tRex.ducking) {
+                            this.playSound(this.soundFx.BUTTON_PRESS);
+                            player.tRex.startJump(this.currentSpeed);
+                        }
+                    }
+
+                    /*this.players.forEach((player) => {
                         //  Play sound effect and jump on starting the game for the first time.
                         if (!player.tRex.jumping && !player.tRex.ducking) {
                             this.playSound(this.soundFx.BUTTON_PRESS);
                             player.tRex.startJump(this.currentSpeed);
                         }
-                    });
+                    });*/
                     
                 }
 
@@ -788,8 +813,31 @@
                     this.restart();
                 }
             }
-
-            this.players.forEach((player, index) => {
+        
+            if (e.keyCode == 83) {
+                const player = this.players[1];
+                e.preventDefault();
+                if (player.tRex.jumping) {
+                    // Speed drop, activated only when jump key is not pressed.
+                    player.tRex.setSpeedDrop();
+                } else if (!player.tRex.jumping && !player.tRex.ducking) {
+                    // Duck.
+                    player.tRex.setDuck(true);
+                }
+            }
+            else 
+            if (e.keyCode == 40) {
+                const player = this.players[0];
+                e.preventDefault();
+                if (player.tRex.jumping) {
+                    // Speed drop, activated only when jump key is not pressed.
+                    player.tRex.setSpeedDrop();
+                } else if (!player.tRex.jumping && !player.tRex.ducking) {
+                    // Duck.
+                    player.tRex.setDuck(true);
+                }
+            }
+            /*this.players.forEach((player, index) => {
                 if (this.playing && !this.crashed && Runner.keycodes.DUCK[e.keyCode]) {
                     e.preventDefault();
                     if (player.tRex.jumping) {
@@ -800,7 +848,7 @@
                         player.tRex.setDuck(true);
                     }
                 }
-            });
+            });*/
             
         },
 
@@ -811,20 +859,48 @@
          */
         onKeyUp: function (e) {
             var keyCode = String(e.keyCode);
-            var isjumpKey = Runner.keycodes.JUMP[keyCode] ||
+
+            const acceptedKeyCodes = {
+                JUMP: { '38': 1, '32': 1 , '87': 1 },  // Up, spacebar, W
+                DUCK: { '40': 1, '83': 1 },  // Down, S
+                RESTART: { '13': 1 }  // Enter
+            };
+
+            var isjumpKey = acceptedKeyCodes.JUMP[keyCode]/*Runner.keycodes.JUMP[keyCode]*/ ||
                 e.type == Runner.events.TOUCHEND ||
                 e.type == Runner.events.MOUSEDOWN;
 
             if (this.isRunning() && isjumpKey) {
-                this.players.forEach((player) => {
+                if (e.keyCode == 87) {
+                    const player = this.players[1];
                     player.tRex.endJump();
-                })
+                }
+                else
+                if (e.keyCode == 38 || e.keyCode == 32)
+                {
+                    const player = this.players[0];
+                    player.tRex.endJump();
+                }
+                /*this.players.forEach((player) => {
+                    player.tRex.endJump();
+                });*/
                 
             } else if (Runner.keycodes.DUCK[keyCode]) {
-                this.players.forEach((player) => {
+                if (keyCode == 83) {
+                    const player = this.players[1];
                     player.tRex.speedDrop = false;
                     player.tRex.setDuck(false);
-                })
+                }
+                else 
+                if (e.keyCode == 40) {
+                    const player = this.players[0];
+                    player.tRex.speedDrop = false;
+                    player.tRex.setDuck(false);
+                }
+                /*this.players.forEach((player) => {
+                    player.tRex.speedDrop = false;
+                    player.tRex.setDuck(false);
+                });*/
             } else if (this.crashed) {
                 // Check that enough time has elapsed before allowing jump key to restart.
                 var deltaTime = getTimeStamp() - this.time;
