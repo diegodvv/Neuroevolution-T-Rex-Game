@@ -54,6 +54,7 @@
 
         //this.tRex = null;
         this.players = [];
+        this.lastPlayerThatCrashed = -1;
 
         this.distanceMeter = null;
         this.distanceRan = 0;
@@ -564,14 +565,22 @@
             var deltaTime = now - (this.time || now);
             this.time = now;
 
+            let allPlayersCrashed = true;
+            for (let player of this.players) {
+                if (!player.crashed) {
+                    allPlayersCrashed = false;
+                    break;
+                }
+            }
+
             if (this.playing) {
                 this.clearCanvas();
 
                 this.players.forEach((player) => {
-                    if (player.tRex.jumping) {
+                    if (!player.crashed && player.tRex.jumping) {
                         player.tRex.updateJump(deltaTime);
                     }
-                })
+                });
                 
                 this.runningTime += deltaTime;
                 var hasObstacles = this.runningTime > this.config.CLEAR_TIME;
@@ -610,6 +619,7 @@
                         this.distanceRan += this.currentSpeed * deltaTime / this.msPerFrame;
                     } else {
                         player.crashed = true;
+                        this.lastPlayerThatCrashed = index;
                         console.log("Player " + index + " Crashed!");
                     }
 
@@ -620,14 +630,6 @@
                         score: this.distanceRan
                     });
                 });
-
-                let allPlayersCrashed = true;
-                for (let player of this.players) {
-                    if (!player.crashed) {
-                        allPlayersCrashed = false;
-                        break;
-                    }
-                }
 
                 if (allPlayersCrashed) {
                     this.gameOver();
@@ -691,10 +693,12 @@
                 if (!player.crashed && (this.playing || (!this.activated &&
                     player.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT))) {
                     player.tRex.update(deltaTime);
-                    this.scheduleNextUpdate();
                 }
-            })
-            
+            });
+
+            if (!allPlayersCrashed && (this.playing || !this.activated)) {
+                this.scheduleNextUpdate();
+            }
         },
 
         /**
@@ -768,7 +772,7 @@
                 JUMP: { '38': 1, '32': 1 , '87': 1 },  // Up, spacebar, W
                 DUCK: { '40': 1, '83': 1 },  // Down, S
                 RESTART: { '13': 1 }  // Enter
-            };;
+            };
 
             if (e.target != this.detailsButton) {
                 if (!this.crashed && (acceptedKeyCodes.JUMP[e.keyCode]/*Runner.keycodes.JUMP[e.keyCode]*/ ||
@@ -885,7 +889,7 @@
                     player.tRex.endJump();
                 });*/
                 
-            } else if (Runner.keycodes.DUCK[keyCode]) {
+            } else if (acceptedKeyCodes.DUCK[keyCode]/*Runner.keycodes.DUCK[keyCode]*/) {
                 if (keyCode == 83) {
                     const player = this.players[1];
                     player.tRex.speedDrop = false;
@@ -915,7 +919,7 @@
                     // Reset the jump state
                     player.tRex.reset();
                     this.play();
-                })
+                });
             }
         },
 
@@ -959,9 +963,10 @@
             this.crashed = true;
             this.distanceMeter.acheivement = false;
 
-            this.players.forEach((player) => {
+            this.players[this.lastPlayerThatCrashed].tRex.update(100, Trex.status.CRASHED);
+            /*this.players.forEach((player) => {
                 player.tRex.update(100, Trex.status.CRASHED);
-            })
+            });*/
 
             // Game over panel.
             if (!this.gameOverPanel) {
