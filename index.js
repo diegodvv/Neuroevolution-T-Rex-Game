@@ -763,6 +763,23 @@
          * @param {Event} e
          */
         onKeyDown: function (e) {
+            const self = this;
+            function onJumpKeyDown(player) {
+                if (!player.tRex.jumping && !player.tRex.ducking) {
+                    self.playSound(self.soundFx.BUTTON_PRESS);
+                    player.tRex.startJump(self.currentSpeed);
+                }
+            }
+
+            function onDuckKeyDown(player) {
+                if (player.tRex.jumping) {
+                    // Speed drop, activated only when jump key is not pressed.
+                    player.tRex.setSpeedDrop();
+                } else if (!player.tRex.jumping && !player.tRex.ducking) {
+                    // Duck.
+                    player.tRex.setDuck(true);
+                }
+            }
             // Prevent native page scrolling whilst tapping on mobile.
             if (IS_MOBILE && this.playing) {
                 e.preventDefault();
@@ -787,19 +804,11 @@
                     }
 
                     if (e.keyCode == 87) {
-                        const player = this.players[1];
-                        if (!player.tRex.jumping && !player.tRex.ducking) {
-                            this.playSound(this.soundFx.BUTTON_PRESS);
-                            player.tRex.startJump(this.currentSpeed);
-                        }
+                        onJumpKeyDown(this.players[1]);
                     }
                     else
                     if (e.keyCode == 38 || e.keyCode == 32) {
-                        const player = this.players[0];
-                        if (!player.tRex.jumping && !player.tRex.ducking) {
-                            this.playSound(this.soundFx.BUTTON_PRESS);
-                            player.tRex.startJump(this.currentSpeed);
-                        }
+                        onJumpKeyDown(this.players[0]);
                     }
 
                     /*this.players.forEach((player) => {
@@ -819,27 +828,13 @@
             }
         
             if (e.keyCode == 83) {
-                const player = this.players[1];
                 e.preventDefault();
-                if (player.tRex.jumping) {
-                    // Speed drop, activated only when jump key is not pressed.
-                    player.tRex.setSpeedDrop();
-                } else if (!player.tRex.jumping && !player.tRex.ducking) {
-                    // Duck.
-                    player.tRex.setDuck(true);
-                }
+                onDuckKeyDown(this.players[1]);
             }
             else 
             if (e.keyCode == 40) {
-                const player = this.players[0];
                 e.preventDefault();
-                if (player.tRex.jumping) {
-                    // Speed drop, activated only when jump key is not pressed.
-                    player.tRex.setSpeedDrop();
-                } else if (!player.tRex.jumping && !player.tRex.ducking) {
-                    // Duck.
-                    player.tRex.setDuck(true);
-                }
+                onDuckKeyDown(this.players[0]);
             }
             /*this.players.forEach((player, index) => {
                 if (this.playing && !this.crashed && Runner.keycodes.DUCK[e.keyCode]) {
@@ -862,6 +857,15 @@
          * @param {Event} e
          */
         onKeyUp: function (e) {
+            function onJumpKeyUp(player) {
+                player.tRex.endJump();
+            }
+
+            function onDuckKeyUp(player) {
+                player.tRex.speedDrop = false;
+                player.tRex.setDuck(false);
+            }
+
             var keyCode = String(e.keyCode);
 
             const acceptedKeyCodes = {
@@ -876,14 +880,12 @@
 
             if (this.isRunning() && isjumpKey) {
                 if (e.keyCode == 87) {
-                    const player = this.players[1];
-                    player.tRex.endJump();
+                    onJumpKeyUp(this.players[1]);
                 }
                 else
                 if (e.keyCode == 38 || e.keyCode == 32)
                 {
-                    const player = this.players[0];
-                    player.tRex.endJump();
+                    onJumpKeyUp(this.players[0]);
                 }
                 /*this.players.forEach((player) => {
                     player.tRex.endJump();
@@ -891,15 +893,11 @@
                 
             } else if (acceptedKeyCodes.DUCK[keyCode]/*Runner.keycodes.DUCK[keyCode]*/) {
                 if (keyCode == 83) {
-                    const player = this.players[1];
-                    player.tRex.speedDrop = false;
-                    player.tRex.setDuck(false);
+                    onDuckKeyUp(this.players[1]);
                 }
                 else 
                 if (e.keyCode == 40) {
-                    const player = this.players[0];
-                    player.tRex.speedDrop = false;
-                    player.tRex.setDuck(false);
+                    onDuckKeyUp(this.players[0]);
                 }
                 /*this.players.forEach((player) => {
                     player.tRex.speedDrop = false;
