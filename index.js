@@ -5,7 +5,15 @@
 (function () {
     'use strict';
 
-    function Player() {
+    /**
+     * A player of the game.
+     * @constructor
+     * @param {Runner} runnerInstance
+     * @export
+     */
+    function Player(runnerInstance) {
+        this.runnerInstance = runnerInstance;
+
         this.tRex = null;
 
         this.distanceRan = 0;
@@ -22,6 +30,32 @@
         this.resizeTimerId_ = null;
 
         this.playCount = 0;
+
+        this.onJumpKeyDown = function () {
+            if (!this.tRex.jumping && !this.tRex.ducking) {
+                this.runnerInstance.playSound(this.runnerInstance.soundFx.BUTTON_PRESS);
+                this.tRex.startJump(this.runnerInstance.currentSpeed);
+            }
+        };
+
+        this.onDuckKeyDown = function () {
+            if (this.tRex.jumping) {
+                // Speed drop, activated only when jump key is not pressed.
+                this.tRex.setSpeedDrop();
+            } else if (!this.tRex.jumping && !this.tRex.ducking) {
+                // Duck.
+                this.tRex.setDuck(true);
+            }
+        };
+
+        this.onJumpKeyUp = function () {
+            this.tRex.endJump();
+        };
+
+        this.onDuckKeyUp = function () {
+            this.tRex.speedDrop = false;
+            this.tRex.setDuck(false);
+        };
     }
 
 
@@ -225,8 +259,8 @@
      * @enum {Object}
      */
     Runner.keycodes = {
-        JUMP: { '38': 1, '32': 1 },  // Up, spacebar
-        DUCK: { '40': 1 },  // Down
+        JUMP: { '38': 1, '32': 1 , '87': 1 },  // Up, spacebar, W
+        DUCK: { '40': 1, '83': 1 },  // Down, S
         RESTART: { '13': 1 }  // Enter
     };
 
@@ -403,8 +437,8 @@
             this.distanceMeter = new DistanceMeter(this.canvas,
                 this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH);
 
-            this.players.push(new Player())
-            this.players.push(new Player())
+            this.players.push(new Player(this));
+            this.players.push(new Player(this));
             // Draw t-rex
             this.players.forEach((player) => {
                 player.tRex = new Trex(this.canvas, this.spriteDef.TREX);
@@ -763,23 +797,6 @@
          * @param {Event} e
          */
         onKeyDown: function (e) {
-            const self = this;
-            function onJumpKeyDown(player) {
-                if (!player.tRex.jumping && !player.tRex.ducking) {
-                    self.playSound(self.soundFx.BUTTON_PRESS);
-                    player.tRex.startJump(self.currentSpeed);
-                }
-            }
-
-            function onDuckKeyDown(player) {
-                if (player.tRex.jumping) {
-                    // Speed drop, activated only when jump key is not pressed.
-                    player.tRex.setSpeedDrop();
-                } else if (!player.tRex.jumping && !player.tRex.ducking) {
-                    // Duck.
-                    player.tRex.setDuck(true);
-                }
-            }
             // Prevent native page scrolling whilst tapping on mobile.
             if (IS_MOBILE && this.playing) {
                 e.preventDefault();
@@ -804,11 +821,11 @@
                     }
 
                     if (e.keyCode == 87) {
-                        onJumpKeyDown(this.players[1]);
+                        this.players[1].onJumpKeyDown();
                     }
                     else
                     if (e.keyCode == 38 || e.keyCode == 32) {
-                        onJumpKeyDown(this.players[0]);
+                        this.players[0].onJumpKeyDown();
                     }
 
                     /*this.players.forEach((player) => {
@@ -829,12 +846,12 @@
         
             if (e.keyCode == 83) {
                 e.preventDefault();
-                onDuckKeyDown(this.players[1]);
+                this.players[1].onDuckKeyDown();
             }
             else 
             if (e.keyCode == 40) {
                 e.preventDefault();
-                onDuckKeyDown(this.players[0]);
+                this.players[0].onDuckKeyDown();
             }
             /*this.players.forEach((player, index) => {
                 if (this.playing && !this.crashed && Runner.keycodes.DUCK[e.keyCode]) {
@@ -857,15 +874,6 @@
          * @param {Event} e
          */
         onKeyUp: function (e) {
-            function onJumpKeyUp(player) {
-                player.tRex.endJump();
-            }
-
-            function onDuckKeyUp(player) {
-                player.tRex.speedDrop = false;
-                player.tRex.setDuck(false);
-            }
-
             var keyCode = String(e.keyCode);
 
             const acceptedKeyCodes = {
@@ -880,12 +888,12 @@
 
             if (this.isRunning() && isjumpKey) {
                 if (e.keyCode == 87) {
-                    onJumpKeyUp(this.players[1]);
+                    this.players[1].onJumpKeyUp();
                 }
                 else
                 if (e.keyCode == 38 || e.keyCode == 32)
                 {
-                    onJumpKeyUp(this.players[0]);
+                    this.players[0].onJumpKeyUp();
                 }
                 /*this.players.forEach((player) => {
                     player.tRex.endJump();
@@ -893,11 +901,11 @@
                 
             } else if (acceptedKeyCodes.DUCK[keyCode]/*Runner.keycodes.DUCK[keyCode]*/) {
                 if (keyCode == 83) {
-                    onDuckKeyUp(this.players[1]);
+                    this.players[1].onDuckKeyUp();
                 }
                 else 
                 if (e.keyCode == 40) {
-                    onDuckKeyUp(this.players[0]);
+                    this.players[0].onDuckKeyUp();
                 }
                 /*this.players.forEach((player) => {
                     player.tRex.speedDrop = false;
@@ -2909,4 +2917,20 @@ function onDocumentLoad() {
 
 document.addEventListener('DOMContentLoaded', onDocumentLoad);
 
-setInterval(() => console.log(RunnerObj.state), 2000)
+setInterval(() => console.log(RunnerObj.state), 2000);
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+setInterval(async () => {
+    console.log("AI is moving!");
+    const aiPlayer = RunnerObj.players[1];
+    aiPlayer.onJumpKeyDown();
+    await sleep(200);
+    aiPlayer.onJumpKeyUp();
+    await sleep(300);
+    //aiPlayer.onDuckKeyDown();
+    await sleep(100);
+    //aiPlayer.onDuckKeyUp();
+}, 3000);
