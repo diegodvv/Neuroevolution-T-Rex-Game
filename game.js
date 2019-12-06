@@ -693,7 +693,8 @@
                         xPos: player.tRex.xPos/this.dimensions.WIDTH,
                         yPos: player.tRex.yPos/this.dimensions.HEIGHT,
                         crashed: player.crashed,
-                        score: this.distanceRan
+                        score: this.distanceRan,
+                        jumpVelocity: player.tRex.jumpVelocity/10
                     };
                 });
 
@@ -709,7 +710,7 @@
                     }
                     :
                     {
-                        xPos: 0,//-73,
+                        xPos: 1,//-73,
                         yPos: 0,
                         width: 0,
                         height: 0

@@ -43,23 +43,26 @@ function GeneticAlgorithm(runnerInstance) {
             }
         }
     }
-    const numberOfPlayersPerGeneration = 25;
+    const numberOfPlayersPerGeneration = 50;
 
     const Neat = neataptic.Neat;
     const Architect = neataptic.Architect;
+
+    const inputCount = 8;
+    const outputCount = 2;
     const neat = new Neat(
-        7,
-        2,
+        inputCount,
+        outputCount,
         null,
         {
             //mutation: methods.mutation.ALL,
             popsize: numberOfPlayersPerGeneration,
-            mutationRate: 0.5,
-            elitism: 10,
+            mutationRate: 0.3,
+            elitism: 5,
             network: new Architect.Random(
-            7,
-            9,
-            2
+            inputCount,
+            inputCount + outputCount,
+            outputCount
             )
         }
     );
@@ -182,17 +185,18 @@ function GeneticAlgorithm(runnerInstance) {
     }
 
     function getJumpInfluenceInScore(jumpCount) {
-        return jumpCount * 10;
+        return /*jumpCount * 10*/0;
     }
 
     function getDuckInfluenceInScore(duckCount) {
-        return duckCount * 20;
+        return /*duckCount * 20*/0;
     }
 
     function getNeuralNetworkInputs(playerState, gameState) {
         return [
             playerState.xPos,
             playerState.yPos,
+            playerState.jumpVelocity,
             gameState.velocity,
             gameState.closestObstacle.yPos,
             gameState.closestObstacle.xPos,
