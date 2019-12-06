@@ -38,8 +38,8 @@ function GeneticAlgorithm(runnerInstance) {
         {
             //mutation: methods.mutation.ALL,
             popsize: numberOfPlayersPerGeneration,
-            mutationRate: 0.3,
-            elitism: 1
+            mutationRate: 0.5,
+            elitism: 10
             /*network: new architect.Random(
             7,
             9,
