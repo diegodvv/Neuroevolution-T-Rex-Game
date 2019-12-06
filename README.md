@@ -14,4 +14,4 @@ This is an implementation of a neuroevolution (a.k.a. genetic) algorithm to the 
 ![](demo3.gif)
 
 ## Work in Progress
-This little still isn't complete and definitely needs improvements on the UI and the AI - specifically, how the game states are made (the states need to be easy for the AI to "understand") and the NEAT parameters.
+This little project still isn't complete and definitely needs improvements on the UI and the AI - specifically, how the game states are made (the states need to be easy for the AI to "understand") and the NEAT parameters.
