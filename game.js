@@ -63,10 +63,11 @@
      * T-Rex runner.
      * @param {string} outerContainerId Outer containing element id.
      * @param {Object} opt_config
+     * @param {function?} onGameReady
      * @constructor
      * @export
      */
-    function Runner(outerContainerId, opt_config) {
+    function Runner(outerContainerId, opt_config, onGameReady) {
         // Singleton
         if (Runner.instance_) {
             return Runner.instance_;
@@ -81,6 +82,7 @@
         this.detailsButton = this.outerContainerEl.querySelector('#details-button');
 
         this.config = opt_config || Runner.config;
+        this.onGameReady = onGameReady;
 
         this.dimensions = Runner.defaultDimensions;
 
@@ -290,6 +292,16 @@
 
     Runner.prototype = {
         /**
+         * Adds a new player to the game.
+         */
+        addPlayer: function() {
+            const player = new Player(this);
+            player.tRex = new Trex(this.canvas, this.spriteDef.TREX);
+
+            this.players.push(player);
+        },
+
+        /**
          * Subscribes a new function to be called on notifyAll.
          * @param {function} func
          */
@@ -456,12 +468,10 @@
             this.distanceMeter = new DistanceMeter(this.canvas,
                 this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH);
 
-            this.players.push(new Player(this));
-            this.players.push(new Player(this));
             // Draw t-rex
             this.players.forEach((player) => {
                 player.tRex = new Trex(this.canvas, this.spriteDef.TREX);
-            })
+            });
 
             this.outerContainerEl.appendChild(this.containerEl);
 
@@ -470,6 +480,10 @@
             }
 
             this.startListening();
+
+            if (this.onGameReady) 
+                this.onGameReady(this);
+
             this.update();
 
             window.addEventListener(Runner.events.RESIZE,
@@ -676,12 +690,32 @@
                     }
 
                     this.playersState[index] = {
-                        xPos: player.tRex.xPos,
-                        yPos: player.tRex.yPos,
+                        xPos: player.tRex.xPos/this.dimensions.WIDTH,
+                        yPos: player.tRex.yPos/this.dimensions.HEIGHT,
                         crashed: player.crashed,
                         score: this.distanceRan
                     };
                 });
+
+                this.state = {
+                    players: this.playersState,
+                    velocity: this.currentSpeed/this.config.MAX_SPEED,
+                    closestObstacle: (this.horizon.obstacles[0]) ?
+                    {
+                        xPos: (this.horizon.obstacles[0].xPos + 73)/this.dimensions.WIDTH,
+                        yPos: (this.horizon.obstacles[0].yPos)/this.dimensions.HEIGHT,
+                        width: (this.horizon.obstacles[0].typeConfig.width * this.horizon.obstacles[0].size - 2)/this.dimensions.WIDTH,
+                        height: (this.horizon.obstacles[0].typeConfig.height - 2)/this.dimensions.HEIGHT
+                    }
+                    :
+                    {
+                        xPos: 0,//-73,
+                        yPos: 0,
+                        width: 0,
+                        height: 0
+                    },
+                    allPlayersCrashed: allPlayersCrashed
+                };
 
                 if (allPlayersCrashed) {
                     this.gameOver();
@@ -691,25 +725,6 @@
                         this.currentSpeed += this.config.ACCELERATION;
                     }
                 }
-
-                this.state = {
-                    players: this.playersState,
-                    velocity: this.currentSpeed,
-                    closestObstacle: (this.horizon.obstacles[0]) ?
-                    {
-                        xPos: this.horizon.obstacles[0].xPos/* + 73*/,
-                        yPos: this.horizon.obstacles[0].yPos,
-                        width: this.horizon.obstacles[0].typeConfig.width * this.horizon.obstacles[0].size - 2,
-                        height: this.horizon.obstacles[0].typeConfig.height - 2
-                    }
-                    :
-                    {
-                        xPos: -73,
-                        yPos: 0,
-                        width: 0,
-                        height: 0
-                    }
-                };
 
                 var playAchievementSound = this.distanceMeter.update(deltaTime,
                     Math.ceil(this.distanceRan));
@@ -1750,7 +1765,7 @@
         HEIGHT: 47,
         HEIGHT_DUCK: 25,
         INIITAL_JUMP_VELOCITY: -10,
-        INTRO_DURATION: 1500,
+        INTRO_DURATION: 0,
         MAX_JUMP_HEIGHT: 30,
         MIN_JUMP_HEIGHT: 30,
         SPEED_DROP_COEFFICIENT: 3,

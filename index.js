@@ -1,13 +1,6 @@
 var RunnerObj;
 function onDocumentLoad() {
-    RunnerObj = new Runner('.interstitial-wrapper');
-    RunnerObj.subscribe((state) => {
-        console.log(state);
-    });
+    RunnerObj = new Runner('.interstitial-wrapper', Runner.config, (runnerInstance) => GeneticAlgorithm(runnerInstance));
 }
 
 document.addEventListener('DOMContentLoaded', onDocumentLoad);
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
