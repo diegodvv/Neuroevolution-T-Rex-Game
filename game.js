@@ -1074,15 +1074,15 @@
          * Pause the game if the tab is not in focus.
          */
         onVisibilityChange: function (e) {
-            if (document.hidden || document.webkitHidden || e.type == 'blur' ||
+            /*if (document.hidden || document.webkitHidden || e.type == 'blur' ||
                 document.visibilityState != 'visible') {
                 this.stop();
             } else if (!this.crashed) {
                 this.players.forEach((player) => {
                     player.tRex.reset();
-                })
+                });
                 this.play();
-            }
+            }*/
         },
 
         /**

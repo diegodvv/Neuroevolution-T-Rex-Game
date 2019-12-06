@@ -5,32 +5,48 @@ function GeneticAlgorithm(runnerInstance) {
         this.brain = brain;
         this.isPressingJump = false;
         this.isPressingDuck = false;
+        this.crashed = false;
+        this.jumpCount = 0;
+        this.duckCount = 0;
 
         this.processJumpPressState = function (pressingJump) {
             if (pressingJump) {
-                if (!this.isPressingJump)
+                if (!this.isPressingJump) {
                     this.gamePlayer.onJumpKeyDown();
+                    this.isPressingJump = true;
+
+                    if (!this.isPressingDuck)
+                        this.jumpCount++;
+                }
             }
             else {
-                if (this.isPressingJump)
+                if (this.isPressingJump) {
                     this.gamePlayer.onJumpKeyUp();
+                    this.isPressingJump = false;
+                }
             }
         }
 
         this.processDuckPressState = function (pressingDuck) {
             if (pressingDuck) {
-                if (!this.isPressingDuck)
+                if (!this.isPressingDuck) {
                     this.gamePlayer.onDuckKeyDown();
+                    this.isPressingDuck = true;
+                    this.duckCount++;
+                }
             }
             else {
-                if (this.isPressingDuck)
+                if (this.isPressingDuck) {
                     this.gamePlayer.onDuckKeyUp();
+                    this.isPressingDuck = false;
+                }
             }
         }
     }
-    const numberOfPlayersPerGeneration = 30;
+    const numberOfPlayersPerGeneration = 25;
 
     const Neat = neataptic.Neat;
+    const Architect = neataptic.Architect;
     const neat = new Neat(
         7,
         2,
@@ -39,21 +55,79 @@ function GeneticAlgorithm(runnerInstance) {
             //mutation: methods.mutation.ALL,
             popsize: numberOfPlayersPerGeneration,
             mutationRate: 0.5,
-            elitism: 10
-            /*network: new architect.Random(
+            elitism: 10,
+            network: new Architect.Random(
             7,
             9,
             2
-            )*/
+            )
         }
     );
 
+    neat.generation = 1;
     const aiPlayers = [];
+
+    const tableContainer = document.getElementById("table-container");
+    const generationNumberLabel = document.getElementById("generation-number-label");
     function initTraining() {
-        
         addPlayersToGame();
         startGeneration();
         initGame();
+    }
+
+    function updateHTMLVisualization() {
+        generationNumberLabel.innerHTML = neat.generation;
+        tableContainer.innerHTML = getTableString();
+    }
+
+    function getTableString() {
+        function getOriginalScore(currentScore, jumpInfluence, duckInfluence) {
+            return currentScore - (jumpInfluence + duckInfluence);
+        }
+
+        function getYesOrNoStringFromBoolean(boolean) {
+            return boolean ? "Yes" : "No";
+        }
+
+        let tableHTML = "<table>";
+        tableHTML += "<tr>";
+        tableHTML += "<th>Index</th>";
+        tableHTML += "<th>Alive</th>";
+        tableHTML += "<th>Game Score</th>";
+        tableHTML += "<th>Bonus Score</th>";
+        tableHTML += "<th>Pressing Jump</th>";
+        tableHTML += "<th>Pressing Duck</th>";
+        tableHTML += "<th>Jump Count</th>";
+        tableHTML += "<th>Duck Count</th>";
+        tableHTML += "</tr>";
+        
+        aiPlayers.forEach((aiPlayer, index) => {
+            const currentScore = aiPlayer.brain.score;
+
+            const jumpInfluence = getJumpInfluenceInScore(aiPlayer.jumpCount);
+            const duckInfluence = getJumpInfluenceInScore(aiPlayer.duckCount);
+
+            const changeInScore = jumpInfluence + duckInfluence;
+
+            const originalScore = currentScore - changeInScore;
+
+            const tableRowClass = aiPlayer.crashed ? "crashed" : "alive";
+            tableHTML += "<tr class=\"" + tableRowClass + "\">";
+
+            tableHTML += "<td>" + index + "</td>";
+            tableHTML += "<td>" + getYesOrNoStringFromBoolean(!aiPlayer.crashed) + "</td>";
+            tableHTML += "<td>" + Math.round(originalScore/100) + " </td>";
+            tableHTML += "<td>" + Math.round(changeInScore/10) + " </td>";
+            tableHTML += "<td>" + getYesOrNoStringFromBoolean(aiPlayer.isPressingJump) + "</td>";
+            tableHTML += "<td>" + getYesOrNoStringFromBoolean(aiPlayer.isPressingDuck) + "</td>";
+            tableHTML += "<td>" + aiPlayer.jumpCount + "</td>";
+            tableHTML += "<td>" + aiPlayer.duckCount + "</td>";
+
+            tableHTML += "</tr>";
+        });
+        tableHTML += "</table>";
+
+        return tableHTML;
     }
 
     function initGame() {
@@ -84,12 +158,15 @@ function GeneticAlgorithm(runnerInstance) {
         aiPlayers.forEach((aiPlayer) => {
             processState(aiPlayer, gameState);
         });
+
+        updateHTMLVisualization();
     }
 
     function processState(aiPlayer, gameState) {
         const playerState = gameState.players[aiPlayer.index];
 
-        updateScore(aiPlayer.brain, playerState.score);
+        updateScore(aiPlayer, playerState.score);
+        aiPlayer.crashed = playerState.crashed;
         if (playerState.crashed)
             return;
 
@@ -98,8 +175,18 @@ function GeneticAlgorithm(runnerInstance) {
         movePlayer(aiPlayer, neuralNetworkInputs);
     }
 
-    function updateScore(playerBrain, newScore) {
-        playerBrain.score = newScore;
+    function updateScore(aiPlayer, gameScore) {
+        const jumpInfluence = getJumpInfluenceInScore(aiPlayer.jumpCount);
+        const duckInfluence = getDuckInfluenceInScore(aiPlayer.duckCount);
+        aiPlayer.brain.score = gameScore + jumpInfluence + duckInfluence;
+    }
+
+    function getJumpInfluenceInScore(jumpCount) {
+        return jumpCount * 10;
+    }
+
+    function getDuckInfluenceInScore(duckCount) {
+        return duckCount * 20;
     }
 
     function getNeuralNetworkInputs(playerState, gameState) {
