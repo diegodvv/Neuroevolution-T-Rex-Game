@@ -8,9 +8,11 @@ This is an implementation of a neuroevolution (a.k.a. genetic) algorithm to the 
 
 ## Demo(s)
 Current version:
+
 ![](demo4.gif)
 
 Old versions:
+
 ![](demo.gif)
 
 ![](demo2.gif)
