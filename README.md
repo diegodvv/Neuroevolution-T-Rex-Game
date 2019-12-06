@@ -1,44 +1,17 @@
-## t-rex-runner
+# Neuroevolution for Chrome T-Rex Runner Game
+This is an implementation of a neuroevolution (a.k.a. genetic) algorithm to the Google Chrome T-Rex Runner game.
 
-the trex runner game extracted from chrome offline err page.
-
-see the [source](https://cs.chromium.org/chromium/src/components/neterror/resources/offline.js?q=t-rex+package:%5Echromium$&dr=C&l=7) from chromium
-
-
-[go and enjoy! :smile: ](http://wayou.github.io/t-rex-runner/)
-
-![chrome offline game cast](assets/screenshot.gif)
-
-## Interesting Forks/In Chinese, we call it 「花样玩法」
-
-- [vianroyal](https://github.com/vianroyal)/[t-rex-runner](https://github.com/vianroyal/t-rex-runner) [Kumamon runner](http://vianroyal.github.io/t-rex-runner/) 
-<br>
-
-![](assets/kumamon-runner.gif)
-
-- [xkuga](https://github.com/xkuga)/[t-rex-runner](https://github.com/xkuga/t-rex-runner) [Hello KuGou](http://hellokugou.com/) 
-<br>
-
-![](assets/hello-kugou.gif)
-
-- [d-nery](https://github.com/d-nery/)/[t-rex-runner](https://github.com/d-nery/t-rex-runner) [Novas coisas](http://d-nery.github.io/t-rex-runner/) 
-<br>
-
-![](assets/novas-coisas.gif)
-
-- [chirag64](https://github.com/chirag64)/[t-rex-runner-bot](https://github.com/chirag64/t-rex-runner-bot) [t-rex runner bot](https://chirag64.github.io/t-rex-runner-bot/) 
-<br>
-
-![](assets/t-rex-runner-bot.gif)
-
-- [19janil](https://github.com/19janil)/[t-rex-runner](https://github.com/19janil/t-rex-runner) [t-rex runner](https://19janil.github.io/t-rex-runner/) 
-<br>
-
-![](assets/t-rex-runner-19janil.gif)
-
-- [enthus1ast](https://github.com/enthus1ast)/[chromeTrip](https://github.com/enthus1ast/chromeTrip) [Chrome Trip by code0](https://code0.itch.io/chrome-trip) 
-<br>
-
-![](https://user-images.githubusercontent.com/13794470/37289691-964618be-260a-11e8-8c4a-6df04d6c490d.gif)
+## Sources/Libraries used
+ - [wayou/t-rex-runner](https://github.com/wayou/t-rex-runner) - Source code of the game
+ - [wagenaartje/neataptic](https://github.com/wagenaartje/neataptic) - Neuroevolution library which implements the NEAT algorithm
 
 
+## Demo(s)
+![](demo.gif)
+
+![](demo2.gif)
+
+![](demo3.gif)
+
+## Work in Progress
+This little still isn't complete and definitely needs improvements on the UI and the AI - specifically, how the game states are made (the states need to be easy for the AI to "understand") and the NEAT parameters.
